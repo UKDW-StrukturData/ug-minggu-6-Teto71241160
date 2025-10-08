@@ -18,23 +18,54 @@ class excelManager:
     def insertData(self,newData:dict,saveChange:bool=False):
         # kerjakan disini
         # clue cara insert row: df = pandas.concat([df, pandas.DataFrame([{"NIM":0,"Nama":"Udin","Nilai":1000}])], ignore_index=True)
-        
-        if (saveChange): self.saveChange()
-        pass
+        if not isinstance(newData, dict):
+            raise TypeError("newData must be a dict")
+        new_row_df = pandas.DataFrame([newData])
+        self.__data = pandas.concat([self.__data, new_row_df], ignore_index=True)
+        if (saveChange):
+            self.saveChange()
     
     def deleteData(self, targetedNim:str,saveChange:bool=False):
         # kerjakan disini
-        # clue cara delete row: df.drop(indexBaris, inplace=True); contoh: df.drop(0,inplace=True)
-        
-        
-        if (saveChange): self.saveChange()
-        pass
+        # clue cara delete row (contoh):self.__data.drop(indexBaris, inplace=True);contoh penggunaan: self.__data.drop(0, inplace=True)
+        if 'NIM' not in self.__data.columns:
+            return None
+        mask = self.__data['NIM'].astype(str) == str(targetedNim)
+        matches = self.__data[mask]
+        if matches.empty:
+            return None
+        deleted_rows = []
+        for _, row in matches.iterrows():
+            row_dict = {str(col): str(row[col]) for col in self.__data.columns}
+            deleted_rows.append(row_dict)
+        self.__data.drop(matches.index, inplace=True)
+
+        if (saveChange):
+            self.saveChange()
+        return deleted_rows[0] if len(deleted_rows) == 1 else deleted_rows
     
     def editData(self, targetedNim:str, newData:dict,saveChange:bool=False) -> dict:
         # kerjakan disini
-        # clue cara ganti value: df.at[indexBaris,namaKolom] = value; contoh: df.at[0,ID] = 1
-        if (saveChange): self.saveChange()
-        pass
+        # clue cara ganti value (contoh):self.__data.at[indexBaris, namaKolom] = value; contoh penggunaan: self.__data.at[0, 'ID'] = 1
+        if not isinstance(newData, dict):
+            raise TypeError("newData must be a dict")
+        if 'NIM' not in self.__data.columns:
+            return None
+        mask = self.__data['NIM'].astype(str) == str(targetedNim)
+        matches = self.__data[mask]
+        if matches.empty:
+            return None
+        for idx in matches.index:
+            for key, val in newData.items():
+                self.__data.at[idx, key] = val
+
+        if (saveChange):
+            self.saveChange()
+
+        first_idx = matches.index[0]
+        updated_row = {str(col): str(self.__data.at[first_idx, col]) for col in self.__data.columns}
+        updated_row.update({"Row": int(first_idx)})
+        return updated_row
     
                     
     def getData(self, colName:str, data:str) -> dict:
